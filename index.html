@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111114">
+<meta name="description" content="Moto Shop, tienda de demostración de cascos, accesorios y refacciones con carrito, pedidos y panel administrativo simulado.">
+<title>MOTO SHOP | Tu moto. Tu estilo. Tu camino.</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="top-strip"><span>🏍 MOTO SHOP</span><span class="demo-label">SITIO DEMOSTRATIVO · SIN PAGOS REALES</span><span>HECHO PARA RODAR</span></div>
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="brand" href="#inicio" aria-label="Ir al inicio"><span class="brand-mark">M<span>✦</span></span><span>MOTO<span class="brand-pink">SHOP</span><small>RIDE YOUR WAY</small></span></a>
+    <nav class="main-nav" aria-label="Menú principal">
+      <a href="#inicio" data-nav="inicio">Inicio</a>
+      <a href="#catalogo" data-nav="catalogo">Tienda</a>
+      <a href="#pedidos" data-nav="pedidos">Mis pedidos</a>
+      <a href="#admin" data-nav="admin" id="navAdmin" class="hidden">Administrador</a>
+    </nav>
+    <div class="nav-actions">
+      <button id="themeToggle" class="nav-icon" type="button" title="Cambiar tema" aria-label="Cambiar tema">☾</button>
+      <button id="accountBtn" class="nav-account" type="button"><span class="user-icon">♙</span> <span id="accountLabel">Iniciar sesión</span></button>
+      <button class="nav-cart" data-action="route" data-to="carrito" aria-label="Abrir carrito"><span>🛒</span><span class="cart-count" id="cartCount">0</span></button>
+      <button id="mobileToggle" class="mobile-toggle" aria-label="Abrir menú">☰</button>
+    </div>
+  </div>
+</header>
+<div class="mobile-menu hidden" id="mobileMenu"><a href="#inicio">Inicio</a><a href="#catalogo">Tienda</a><a href="#carrito">Carrito</a><a href="#pedidos">Mis pedidos</a><a href="#admin" id="mobileAdmin" class="hidden">Panel administrador</a></div>
+<div id="flash" class="toast" role="status" aria-live="polite"></div>
+<main id="app" tabindex="-1"><div class="loading-app">Cargando MOTO SHOP…</div></main>
+<footer class="footer"><div class="footer-inner"><div><strong class="footer-logo">MOTO<span>SHOP</span></strong><p>Cascos, accesorios y refacciones. Proyecto académico interactivo.</p></div><div><strong>Explora</strong><a href="#catalogo">Catálogo</a><a href="#carrito">Mi carrito</a><a href="#pedidos">Mis pedidos</a></div><div><strong>Demostración</strong><p>Los pagos, envíos y correos son simulados.<br>Los datos se guardan únicamente en tu navegador.</p><button data-action="exportar" class="footer-button">Exportar mis datos demo</button></div></div><div class="footer-bottom">© <span id="year"></span> MOTO SHOP · Experiencia académica · Ninguna compra genera cargos.</div></footer>
+<div id="modalHost" class="modal-host hidden" role="dialog" aria-modal="true" aria-label="Ventana de Moto Shop"></div>
+<script defer src="assets/js/app.js"></script>
+</body>
+</html>
