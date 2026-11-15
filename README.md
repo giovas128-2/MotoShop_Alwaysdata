@@ -12,6 +12,7 @@ Tienda **demostrativa**, inspirada en el proyecto original de guitarras y adapta
 - Pedido con folio y ticket imprimible o guardable como PDF con el diálogo de impresión del navegador. Correo simulado (vista previa; no envía mensajes).
 - Panel administrativo: altas/bajas/edición de productos, fotos, usuarios/empleados, pedidos, cambios de estado, cancelación con reposición de stock, notificaciones y gráficos.
 - Reporte de ventas por rango de fechas, ventas pagadas, CSV y opción de imprimir a PDF.
+- Pestaña **Escaneos QR** en el panel de administrador: total de aperturas por producto, filtro por fechas y resumen de productos consultados **en el navegador actual**.
 - Datos persistentes en `localStorage`, sesión en `sessionStorage`, exportación de JSON de demostración y botón para reiniciar.
 
 ## Accesos de prueba
@@ -28,6 +29,14 @@ Tienda **demostrativa**, inspirada en el proyecto original de guitarras y adapta
 3. Abre **Settings → Pages → Build and deployment**, elige **Deploy from a branch**, rama `main` y carpeta **/(root)**, después **Save**.
 4. La URL predeterminada será: `https://giovas128-2.github.io/MotoShop_Alwaysdata/` si el repositorio y usuario siguen con estos nombres.
 5. Al abrir el sitio, inicia sesión con las cuentas demo. Crea un producto, agrégalo al carrito, completa un pedido y revisa los reportes.
+
+## Cómo probar el contador de QR
+
+1. En el catálogo o carrito, abre el QR de un producto y utiliza su enlace en **el mismo navegador**, preferiblemente en una pestaña nueva.
+2. Inicia sesión en el panel administrativo de ese navegador y abre **Escaneos QR**.
+3. Filtra por fechas para ver la cantidad de aperturas registradas por producto.
+
+**Limitación:** los enlaces QR incluyen `qr_scan=1`. Cuando se abre un enlace con ese parámetro, se registra una apertura en `localStorage` **de ese dispositivo**. Un escaneo desde el teléfono no se reflejará en el panel abierto en la computadora. Las recargas pueden contarse de nuevo. No mide usuarios únicos ni ofrece una estadística global sin backend compartido.
 
 ## Límites importantes
 
