@@ -6,7 +6,7 @@ const SUPABASE_KEY='sb_publishable_T31kHmMmahkA4dw4PR6JAA_u_EhWLH7';
 let qrGlobal={loading:false,error:'',rows:[],loaded:false};
 async function supabaseRpc(name,args={}){
  const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/'+name,{
-  method:'POST',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+  method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
   body:JSON.stringify(args),cache:'no-store'
  });
  if(!response.ok)throw new Error('Supabase HTTP '+response.status);
