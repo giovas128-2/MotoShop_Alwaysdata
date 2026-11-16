@@ -1,6 +1,28 @@
 /* MOTO SHOP · GitHub Pages · demostración local. No procesa cobros ni guarda información en servidor. */
 (()=>{'use strict';
 const STORAGE='motoshop_pages_v3', SESSION='motoshop_session_v3';
+const SUPABASE_URL='https://igncststdclsfsnjqgjs.supabase.co';
+const SUPABASE_KEY='sb_publishable_T31kHmMmahkA4dw4PR6JAA_u_EhWLH7';
+let qrGlobal={loading:false,error:'',rows:[],loaded:false};
+async function supabaseRpc(name,args={}){
+ const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/'+name,{
+  method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
+  body:JSON.stringify(args),cache:'no-store'
+ });
+ if(!response.ok)throw new Error('Supabase HTTP '+response.status);
+ return response.json();
+}
+async function cargarQrGlobal(){
+ if(qrGlobal.loading)return;
+ qrGlobal.loading=true;qrGlobal.error='';
+ try{
+  const data=await supabaseRpc('reporte_escaneos_qr_publico');
+  qrGlobal.rows=Array.isArray(data)?data:[];
+  qrGlobal.loaded=true;
+ }catch(e){qrGlobal.error='No se pudo consultar Supabase. Ejecuta primero el SQL adicional para habilitar el reporte.';console.warn('Reporte QR',e);}
+ finally{qrGlobal.loading=false;if(adminTab==='qr'&&location.hash.replace('#','')==='admin')render();}
+}
+
 const money=v=>new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(v)||0);
 const enc=s=>encodeURIComponent(String(s??''));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -45,9 +67,15 @@ function imgTag(p,cl=''){if(p?.imagenes?.[0])return `<img class="${cl}" src="${a
 function tile(p,cl=''){return `<div class="product-image ${cl}" style="--product-bg:${/^#[0-9a-fA-F]{6}$/.test(p.color)?p.color:'#f6d9e2'}">${imgTag(p)}</div>`;}
 function pictureSmall(p){return p?.imagenes?.[0]?`<img class="table-img" src="${attr(p.imagenes[0])}" alt="${attr(p.nombre)}">`:`<span class="table-img" aria-label="Imagen ilustrativa">${esc(p?.emoji||'🏍️')}</span>`;}
 function pagesUrl(product){const u=new URL(window.location.href);u.search='';u.hash='';u.searchParams.set('sku',product.id);u.searchParams.set('nombre',product.nombre);u.searchParams.set('precio',Number(product.precio).toFixed(2));u.searchParams.set('stock',product.stock);u.searchParams.set('categoria',product.categoria);u.searchParams.set('icono',product.emoji||'🏍️');u.searchParams.set('qr_scan','1');return u.toString();}
-// Cada apertura de enlace QR solo se registra en el navegador que abre el enlace.
-// GitHub Pages no sincroniza estadísticas entre dispositivos.
-function registrarAperturaQr(){const q=new URLSearchParams(location.search);if(q.get('qr_scan')!=='1')return;const id=Number(q.get('sku'));if(!Number.isSafeInteger(id)||id<=0)return;state.qrEscaneos.push({productoId:id,fecha:ts()});state.qrEscaneos=state.qrEscaneos.slice(-5000);persist();}
+// El QR registra una apertura en Supabase; no utiliza el contador local.
+async function registrarAperturaQr(){
+ const q=new URLSearchParams(location.search);
+ if(q.get('qr_scan')!=='1')return;
+ const id=Number(q.get('sku'));
+ if(!Number.isSafeInteger(id)||id<=0)return;
+ try{await supabaseRpc('registrar_escaneo_qr',{p_producto_id:id});}
+ catch(e){console.warn('No se pudo registrar la apertura QR en Supabase',e);}
+}
 function qrSrc(url,size=180){return 'https://api.qrserver.com/v1/create-qr-code/?format=png&margin=12&size='+size+'x'+size+'&data='+encodeURIComponent(url);}
 function cartLines(){const a=[];for(const c of state.carrito){const p=pById(c.id);if(p&&p.activo&&p.stock>0){const qty=Math.min(Math.max(1,Number(c.cantidad)||1),p.stock);a.push({p,cantidad:qty,total:+(qty*p.precio).toFixed(2)});}}return a;}
 function cartTotals(){let items=cartLines();const subtotal=+(items.reduce((s,i)=>s+i.total,0)).toFixed(2);return {items,subtotal,iva:+(subtotal*.16).toFixed(2)};}
@@ -83,7 +111,14 @@ function listOrders(rows,admin=false){return `<div class="admin-list table-wrap"
 function adminBody(){if(adminTab==='resumen'){const m=metrics(state.pedidos);return `<div class="admin-top"><h2>Resumen general</h2><span class="pill">Datos simulados</span></div>${statCards(m)}<div class="admin-two"><div class="admin-list"><h3>📈 Ventas de los últimos 7 días</h3>${chartSales(state.pedidos)}</div><div class="admin-list"><h3>📊 Inventario y actividad</h3><div class="summary-row"><span>Productos activos</span><strong>${state.productos.filter(p=>p.activo).length}</strong></div><div class="summary-row"><span>Productos con bajo stock (≤ 5)</span><strong>${state.productos.filter(p=>p.stock<=5&&p.activo).length}</strong></div><div class="summary-row"><span>Usuarios registrados</span><strong>${state.usuarios.length}</strong></div><div class="summary-row"><span>Pedidos totales</span><strong>${state.pedidos.length}</strong></div><div class="summary-row"><span>Notificaciones sin leer</span><strong>${state.notificaciones.filter(n=>!n.leida).length}</strong></div><button class="btn btn-outline btn-small" data-action="admin-tab" data-value="reportes">Ver reportes →</button></div></div><div style="height:20px"></div><h3>Últimos pedidos</h3>${listOrders(state.pedidos.slice().sort((a,b)=>b.id-a.id).slice(0,5),true)}`;}
 if(adminTab==='productos'){const all=[...state.productos].sort((a,b)=>b.id-a.id);return `<div class="admin-top"><h2>Inventario y productos</h2><button class="btn btn-pink" data-action="product-edit">+ Nuevo producto</button></div><div class="admin-list table-wrap"><table class="data-table"><thead><tr><th>Imagen</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${all.map(p=>`<tr><td>${pictureSmall(p)}</td><td><strong>${esc(p.nombre)}</strong><br><span class="muted">${esc(p.codigo||'')}</span></td><td>${esc(p.categoria)}</td><td>${money(p.precio)}</td><td><strong>${p.stock}</strong></td><td><span class="pill ${p.activo?'positive':'neutral'}">${p.activo?'Publicado':'Oculto'}</span></td><td><div class="inline-actions"><button class="btn btn-outline btn-small" data-action="product-edit" data-id="${p.id}">Editar</button><button class="btn btn-outline btn-small" data-action="product-toggle" data-id="${p.id}">${p.activo?'Ocultar':'Mostrar'}</button><button class="btn btn-outline btn-small" data-action="product-delete" data-id="${p.id}">Eliminar</button></div></td></tr>`).join('')}</tbody></table></div>`;}
 if(adminTab==='pedidos'){return `<div class="admin-top"><h2>Pedidos y cobros</h2><span class="pill">${state.pedidos.length} pedidos</span></div><div class="demo-info">Al confirmar efectivo, el pedido se registra como pagado (solo para la demo). Cancelarlo devuelve las cantidades al inventario.</div>${listOrders([...state.pedidos].sort((a,b)=>b.id-a.id),true)}`;}
-if(adminTab==='qr'){const all=state.qrEscaneos||[];const filtered=all.filter(e=>{const day=localDay(e.fecha);return (!qrFrom||day>=qrFrom)&&(!qrTo||day<=qrTo);});const counts=new Map();filtered.forEach(e=>counts.set(e.productoId,(counts.get(e.productoId)||0)+1));const rows=[...counts].sort((a,b)=>b[1]-a[1]).map(([id,count])=>{const p=pById(id);return `<tr><td>${esc(p?.nombre||'Producto eliminado #'+id)}</td><td>${esc(p?.codigo||'—')}</td><td><strong>${count}</strong></td></tr>`;}).join('');return `<div class="admin-top"><h2>Escaneos de códigos QR</h2><span class="pill">${filtered.length} aperturas</span></div><div class="admin-list"><div class="demo-info">Estos datos son una demostración LOCAL: se guardan solamente en este navegador. Escanear desde otro celular NO incrementará el contador de este administrador. Sin servidor o base de datos compartida no es posible conocer el total global.</div><div class="report-controls"><div class="field"><label for="qrDesde">Desde</label><input id="qrDesde" type="date" value="${attr(qrFrom)}"></div><div class="field"><label for="qrHasta">Hasta</label><input id="qrHasta" type="date" value="${attr(qrTo)}"></div><button class="btn btn-pink btn-small" type="button" data-action="qr-filter">Filtrar</button><button class="btn btn-outline btn-small" type="button" data-action="qr-clear">Limpiar</button></div><div class="stat-grid"><div class="stat-card"><span class="stat-icon">▦</span><strong>${filtered.length}</strong><small>Aperturas registradas en este navegador</small></div><div class="stat-card"><span class="stat-icon">🏍️</span><strong>${counts.size}</strong><small>Productos consultados</small></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Producto</th><th>Código</th><th>Aperturas</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Todavía no hay aperturas QR registradas en este navegador.</td></tr>'}</tbody></table></div><p class="muted">Una recarga del enlace también puede contar como nueva apertura. No es un contador de visitantes únicos.</p></div>`;}
+if(adminTab==='qr'){
+ const rowsData=qrGlobal.rows.filter(e=>{const day=String(e.dia||'').slice(0,10);return (!qrFrom||day>=qrFrom)&&(!qrTo||day<=qrTo);});
+ const counts=new Map();
+ rowsData.forEach(e=>counts.set(Number(e.producto_id),(counts.get(Number(e.producto_id))||0)+Number(e.total_escaneos||0)));
+ const total=[...counts.values()].reduce((a,b)=>a+b,0);
+ const rows=[...counts].sort((a,b)=>b[1]-a[1]).map(([id,count])=>{const p=pById(id);return `<tr><td>${esc(p?.nombre||'Producto #'+id)}</td><td>${esc(p?.codigo||'—')}</td><td><strong>${count}</strong></td></tr>`;}).join('');
+ return `<div class="admin-top"><h2>Escaneos de códigos QR</h2><span class="pill">${total} aperturas</span></div><div class="admin-list"><div class="demo-info">Estadísticas compartidas de Supabase: los escaneos del celular aparecen también en la computadora. Los conteos agregados son públicos en esta versión de demostración; el inicio de sesión del administrador sigue siendo local.</div>${qrGlobal.error?'<p class="muted">'+esc(qrGlobal.error)+'</p>':''}<div class="report-controls"><div class="field"><label for="qrDesde">Desde</label><input id="qrDesde" type="date" value="${attr(qrFrom)}"></div><div class="field"><label for="qrHasta">Hasta</label><input id="qrHasta" type="date" value="${attr(qrTo)}"></div><button class="btn btn-pink btn-small" type="button" data-action="qr-filter">Filtrar</button><button class="btn btn-outline btn-small" type="button" data-action="qr-clear">Limpiar</button><button class="btn btn-outline btn-small" type="button" data-action="qr-refresh">Actualizar</button></div><div class="stat-grid"><div class="stat-card"><span class="stat-icon">▦</span><strong>${total}</strong><small>Aperturas compartidas</small></div><div class="stat-card"><span class="stat-icon">🏍️</span><strong>${counts.size}</strong><small>Productos consultados</small></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Producto</th><th>Código</th><th>Aperturas</th></tr></thead><tbody>${rows||'<tr><td colspan="3">No hay registros en el periodo seleccionado.</td></tr>'}</tbody></table></div><p class="muted">Se cuentan aperturas, no personas únicas. El registro de prueba realizado en SQL también cuenta.</p></div>`;
+}
 if(adminTab==='reportes'){const orders=filteredOrders(),m=metrics(orders);return `<div class="admin-top"><h2>Reportes de ventas</h2><button class="btn btn-outline btn-small" data-action="csv">↧ Descargar CSV</button></div><div class="admin-list"><form id="reportForm" class="report-controls" data-form="report"><div class="field"><label>Desde</label><input type="date" name="desde" value="${attr(reportFrom)}"></div><div class="field"><label>Hasta</label><input type="date" name="hasta" value="${attr(reportTo)}"></div><button class="btn btn-pink btn-small">Filtrar fechas</button><button class="btn btn-outline btn-small" type="button" data-action="report-clear">Limpiar</button><button class="btn btn-outline btn-small" type="button" data-action="print">Imprimir / PDF</button></form>${statCards(m)}<h3>Pedidos dentro del periodo</h3>${listOrders(orders,false)}<h3 style="margin-top:24px">Productos más vendidos (pedidos cobrados)</h3>${topProducts(orders)}</div>`;}
 if(adminTab==='usuarios'||adminTab==='empleados'){const onlyStaff=adminTab==='empleados';const rows=state.usuarios.filter(u=>onlyStaff?u.role==='empleado':u.role!=='empleado');return `<div class="admin-top"><h2>${onlyStaff?'Empleados':'Usuarios registrados'}</h2><button class="btn btn-pink" data-action="user-edit" data-role="${onlyStaff?'empleado':'cliente'}">+ Agregar ${onlyStaff?'empleado':'usuario'}</button></div><div class="admin-list table-wrap"><table class="data-table"><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Acceso</th><th>Acciones</th></tr></thead><tbody>${rows.map(u=>`<tr><td><strong>${esc(u.nombre)}</strong></td><td>${esc(u.email)}</td><td><span class="pill">${esc(u.role)}</span></td><td>${u.activo?'Activo':'Bloqueado'}</td><td><div class="inline-actions"><button class="btn btn-outline btn-small" data-action="user-edit" data-id="${u.id}">Editar</button>${u.id!==getUser().id?`<button class="btn btn-outline btn-small" data-action="user-toggle" data-id="${u.id}">${u.activo?'Bloquear':'Activar'}</button>`:''}</div></td></tr>`).join('')}</tbody></table></div>`;}
 if(adminTab==='notificaciones'){return `<div class="admin-top"><h2>Notificaciones</h2><button class="btn btn-outline btn-small" data-action="notifications-read">Marcar todas como leídas</button></div><div class="admin-list notifications">${state.notificaciones.length?state.notificaciones.map(n=>`<div class="notice-card"><div><strong>${n.leida?'○':'●'} ${esc(n.texto)}</strong><small>${fmtDate(n.fecha)}</small></div>${n.leida?'':`<button class="btn btn-outline btn-small" data-action="notification-read" data-id="${n.id}">Leída</button>`}</div>`).join(''):'<div class="empty">Sin notificaciones por ahora.</div>'}</div>`;}
@@ -144,7 +179,7 @@ if(a==='remove'){removeCart(id);return;}
 if(a==='checkout'){route('checkout');return;}
 if(a==='auth-tab'){app.innerHTML=authPage(el.dataset.value);return;}
 if(a==='demo-login'){login(el.dataset.role==='admin'?'admin@demo.com':'cliente@demo.com',el.dataset.role==='admin'?'Admin1234!':'Cliente1234!');return;}
-if(a==='admin-tab'){if(staffAccess()){adminTab=el.dataset.value;render();}return;}
+if(a==='admin-tab'){if(staffAccess()){adminTab=el.dataset.value;render();if(adminTab==='qr')cargarQrGlobal();}return;}
 if(a==='receipt'){closeModal();route('ticket/'+id);return;}
 if(a==='print'){window.print();return;}
 if(a==='ticket-email'){let order=orderById(id),u=getUser();if(!order||(!staffAccess()&&order.usuarioId!==u?.id))return;order.correoDemo=true;persist();openModal('Correo de ticket simulado',`<p class="pill">SIMULACIÓN · NO ENVIADO</p><p>Se preparó una vista del ticket para <strong>${esc(order.correo)}</strong>, pero no se ha enviado ningún correo real.</p><p><strong>Asunto:</strong> Moto Shop — Ticket de prueba ${esc(order.folio)}</p><p class="muted">Puedes utilizar el botón Imprimir / PDF de la página del ticket para guardar una copia.</p><button class="btn btn-pink" data-action="close-modal">Entendido</button>`);return;}
@@ -158,6 +193,7 @@ if(a==='user-edit'&&isAdmin()){userEditModal(state.usuarios.find(u=>u.id===id),e
 if(a==='user-toggle'&&isAdmin()){let u=state.usuarios.find(x=>x.id===id);if(!u||u.id===getUser()?.id)return;u.activo=!u.activo;persist();toast('Acceso de usuario actualizado.');render();return;}
 if(a==='notifications-read'&&staffAccess()){state.notificaciones.forEach(n=>n.leida=true);persist();render();return;}
 if(a==='notification-read'&&staffAccess()){let n=state.notificaciones.find(n=>n.id===id);if(n)n.leida=true;persist();render();return;}
+if(a==='qr-refresh'&&isAdmin()){cargarQrGlobal();return;}
 if(a==='qr-filter'&&isAdmin()){const from=document.getElementById('qrDesde')?.value||'',to=document.getElementById('qrHasta')?.value||'';if(from&&to&&from>to){toast('La fecha inicial no puede superar a la final.','err');return;}qrFrom=from;qrTo=to;render();return;}
 if(a==='qr-clear'&&isAdmin()){qrFrom='';qrTo='';render();return;}
 if(a==='report-clear'){reportFrom='';reportTo='';render();return;}
