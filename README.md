@@ -15,6 +15,18 @@ Tienda **demostrativa**, inspirada en el proyecto original de guitarras y adapta
 - Pestaña **Escaneos QR** en el panel de administrador: total de aperturas por producto, filtro por fechas y resumen de productos consultados **en el navegador actual**.
 - Datos persistentes en `localStorage`, sesión en `sessionStorage`, exportación de JSON de demostración y botón para reiniciar.
 
+
+## Catálogo tridimensional con más de 100 productos
+
+La ruta **Tienda** (\`#catalogo\`) incluye una animación estilo tabla periódica con **Three.js** y **CSS3DRenderer**. Permite alternar entre Tabla, Esfera, Hélice y Cuadrícula, girar la vista y abrir fichas con nombre, precio, ícono ilustrativo y los botones **Comprar** / **Cancelar**.
+
+- Se añadieron **100 productos ficticios** (36 cascos, 34 accesorios y 30 refacciones) a los 9 existentes para contar con **109 productos de ejemplo** antes de que el usuario añada más.
+- Los IDs y códigos son estables; una migración de \`localStorage\` añade los productos nuevos **una sola vez** sin borrar cuentas, pedidos ni artículos personalizados.
+- **Comprar** usa el mismo carrito y muestra su pantalla. **Cancelar** anima la ficha de vuelta a su lugar.
+- Las fotos pueden reemplazar los íconos desde la edición del producto en la administración. Los precios, nombres, existencias y compras de los 100 modelos son **ilustrativos**, no una oferta comercial.
+- La animación utiliza tres archivos: \`assets/js/catalogo3d.js\`, \`assets/css/catalogo3d.css\` y el mapa de importaciones de \`index.html\`. Requiere internet para descargar Three.js desde jsDelivr.
+- La interfaz clásica debajo del 3D permanece disponible para buscar y ordenar todos los productos. En dispositivos poco potentes, la animación puede necesitar más recursos.
+
 ## Accesos de prueba
 
 - Administrador: `admin@demo.com` / `Admin1234!`

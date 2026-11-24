@@ -42,12 +42,53 @@ const seeds=[
 {id:107,nombre:'Luz LED Auxiliar',categoria:'Accesorios',precio:369,stock:38,codigo:'ACC-007',emoji:'💡',color:'#feebbc',descripcion:'Iluminación auxiliar de muestra para el catálogo.',imagenes:[],activo:true},
 {id:108,nombre:'Pastillas de Freno',categoria:'Refacciones',precio:349,stock:26,codigo:'REF-008',emoji:'🔧',color:'#d8ece4',descripcion:'Refacción de prueba para el mantenimiento de tu moto.',imagenes:[],activo:true},
 {id:109,nombre:'Casco Retro Classic',categoria:'Cascos',precio:1199,stock:14,codigo:'CAS-009',emoji:'🏍️',color:'#f2d7d2',descripcion:'Estilo clásico con acabados modernos y gran personalidad.',imagenes:[],activo:true}];
+// 100 productos ilustrativos para la actividad académica: 36 cascos, 34 accesorios y 30 refacciones.
+// Los códigos e IDs son estables para conservar carrito y pedidos existentes.
+function catalogo3dEjemplos(){
+ const cascos=['Casco Integral Sprint','Casco Abatible Touring','Casco Retro Ciudad','Casco Modular Ruta','Casco Off-Road Terra','Casco Deportivo Velocity','Casco Urban Street','Casco Doble Visor','Casco Adventure Trail','Casco Integral Night','Casco Aerodinámico Racer','Casco Vintage Classic'];
+ const accesorios=['Guantes Urbanos','Chamarra Protectora','Mochila Impermeable','Visor Ahumado','Rodilleras Protectoras','Impermeable de Viaje','Soporte para Celular','Candado de Disco','Funda para Moto','Lentes de Ruta','Maleta Lateral','Red Elástica','Protector de Cuello','Puños Antideslizantes','Cubremanetas','Reflectores Laterales','Cargador USB'];
+ const refacciones=['Aceite de Motor 4T','Pastillas de Freno','Filtro de Aire','Bujía de Encendido','Kit de Cadena','Piñón de Transmisión','Espejos Laterales','Maneta de Freno','Faro LED','Direccionales LED','Balero de Rueda','Palanca de Cambios','Batería de Moto','Cable de Acelerador','Disco de Freno'];
+ const eCasco=['Carbono','Azul Ártico','Rojo Racing'];
+ const eAcc=['Negro','Rider Pro'];
+ const eRef=['Estándar','Premium'];
+ const iconosAcc=['🧤','🧥','🎒','🥽','🛡️','🌧️','📱','🔒','🏍️','🥽','🧳','🪢','🧣','🛞','🛡️','✨','🔌'];
+ const iconosRef=['🛢️','🛑','🧰','⚡','⛓️','⚙️','🪞','🔧','💡','🚨','🛞','🔩','🔋','🧵','⚙️'];
+ const colores=['#dcefe6','#d5e6f5','#f5d9e7','#e4dff6','#f5e5c7','#cde8e5','#e5e8ec','#eedfcd'];
+ const lista=[];
+ for(let i=0;i<100;i++){
+  const casco=i<36, acc=i>=36&&i<70;
+  const j=casco?i:acc?i-36:i-70;
+  const modelos=casco?cascos:acc?accesorios:refacciones;
+  const ediciones=casco?eCasco:acc?eAcc:eRef;
+  const idx=Math.floor(j/ediciones.length),ed=j%ediciones.length;
+  const categoria=casco?'Cascos':acc?'Accesorios':'Refacciones';
+  const icono=casco?(i%3===0?'⛑️':'🪖'):acc?iconosAcc[idx]:iconosRef[idx];
+  const precio=casco?(1190+idx*165+ed*240):acc?(149+idx*90+ed*100):(129+idx*130+ed*115);
+  lista.push({
+   id:3001+i,nombre:modelos[idx]+' '+ediciones[ed],
+   categoria,precio,stock:8+(i*7)%35,
+   codigo:'M3D-'+String(i+1).padStart(3,'0'),
+   emoji:icono,color:colores[i%colores.length],
+   descripcion:'Edición '+ediciones[ed]+' de '+modelos[idx].toLowerCase()+'. Modelo ilustrativo para compras de demostración.',
+   imagenes:[],activo:true
+  });
+ }
+ return lista;
+}
+const productos3D=catalogo3dEjemplos();
 const demoUsers=[
 {id:1,nombre:'Administración Moto Shop',email:'admin@demo.com',hash:'b507f168642baab1367299fb8892371d289c20a3383cd62423ac73f5e632f9ef',role:'admin',activo:true},
 {id:2,nombre:'Cliente Demo',email:'cliente@demo.com',hash:'4812c8deaebaba0e923bdafc155b36d33dd1414a5429012f977953d2e50fe2e5',role:'cliente',activo:true}];
-const initState=()=>({version:3,productos:structuredClone(seeds),usuarios:structuredClone(demoUsers),pedidos:[],carrito:[],bitacora:[],registros:[],favoritos:[],notificaciones:[],qrEscaneos:[],secuencia:1000});
+const initState=()=>({version:3,productos:[...structuredClone(seeds),...structuredClone(productos3D)],catalogo3dInicializado:true,usuarios:structuredClone(demoUsers),pedidos:[],carrito:[],bitacora:[],registros:[],favoritos:[],notificaciones:[],qrEscaneos:[],secuencia:1000});
 let state;try{state=JSON.parse(localStorage.getItem(STORAGE)||'null');if(!state||state.version!==3||!Array.isArray(state.productos)||!Array.isArray(state.pedidos))state=initState();}catch(e){state=initState();}
 if(!Array.isArray(state.qrEscaneos))state.qrEscaneos=[];
+// Migrar únicamente una vez cada navegador sin borrar productos, usuarios ni pedidos previos.
+if(!state.catalogo3dInicializado){
+ const existentes=new Set(state.productos.map(p=>Number(p.id)));
+ state.productos.push(...structuredClone(productos3D.filter(p=>!existentes.has(p.id))));
+ state.catalogo3dInicializado=true;
+ try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(error){console.warn('No se pudo guardar la ampliación del catálogo',error);}
+}
 let session=null;try{session=JSON.parse(sessionStorage.getItem(SESSION)||'null');}catch(e){};
 let currentCategory='Todos',currentSearch='',currentSort='recientes',adminTab='resumen',reportFrom='',reportTo='',qrFrom='',qrTo='',currentReceiptId=null,selectedImage=0,toastTimer;
 const app=document.getElementById('app'),modalHost=document.getElementById('modalHost'),navAdmin=document.getElementById('navAdmin');
@@ -89,7 +130,19 @@ function card(p){const available=p.activo&&p.stock>0;let fav=state.favoritos.inc
 function catalogSection(home=false){let list=state.productos.filter(p=>p.activo);if(home)list=list.slice(0,8);else{if(currentCategory!=='Todos')list=list.filter(p=>p.categoria===currentCategory);if(currentSearch)list=list.filter(p=>[p.nombre,p.descripcion,p.codigo,p.categoria].join(' ').toLowerCase().includes(currentSearch.toLowerCase()));if(currentSort==='precioasc')list.sort((a,b)=>a.precio-b.precio);else if(currentSort==='preciodesc')list.sort((a,b)=>b.precio-a.precio);else if(currentSort==='nombre')list.sort((a,b)=>a.nombre.localeCompare(b.nombre));else list.sort((a,b)=>b.id-a.id);}
 return `<section class="section" id="catalogo"><div class="section-head"><div><span class="eyebrow">ELIGE TU PRÓXIMA AVENTURA</span><h2>${home?'Productos destacados':'Explora el catálogo'}</h2></div><span class="muted">${list.length} productos</span></div>${home?'':`<div class="catalog-filters"><div class="chips">${['Todos','Cascos','Accesorios','Refacciones'].map(c=>`<button class="chip ${currentCategory===c?'active':''}" data-action="category" data-value="${c}">${c}</button>`).join('')}</div><div class="filter-input"><input id="searchProducts" placeholder="⌕ Buscar por producto o código..." value="${attr(currentSearch)}" aria-label="Buscar productos"></div><select class="sort" id="sortProducts"><option value="recientes" ${currentSort==='recientes'?'selected':''}>Más recientes</option><option value="precioasc" ${currentSort==='precioasc'?'selected':''}>Menor precio</option><option value="preciodesc" ${currentSort==='preciodesc'?'selected':''}>Mayor precio</option><option value="nombre" ${currentSort==='nombre'?'selected':''}>Nombre A-Z</option></select></div>`}<div class="product-grid">${list.map(card).join('')}</div>${list.length?'':`<div class="empty panel"><span class="emoji">🔍</span><h3>Sin resultados</h3><p>Prueba con otra búsqueda o categoría.</p><button class="btn" data-action="clear-search">Mostrar todos</button></div>`}${home?`<p style="text-align:center;margin-top:30px"><a class="btn btn-outline" href="#catalogo">Ver todo el catálogo →</a></p>`:''}</section>`;}
 function homePage(){return `<div class="container"><div class="hero"><div class="hero-copy"><div class="hero-kicker">ACCESORIOS PARA CADA RUTA</div><h1>Tu moto.<br>Tu estilo.<br><em>Tu camino.</em></h1><p>Elige el equipo para tu próxima aventura. Explora productos, arma tu carrito y realiza pedidos de demostración.</p><a href="#catalogo" class="btn btn-pink">Explorar productos ↗</a><div class="hero-footnote">CASCOS &nbsp; / &nbsp; ACCESORIOS &nbsp; / &nbsp; REFACCIONES</div></div><div class="hero-visual"><div class="hero-glow"></div><span class="hero-bike">🏍️</span><span class="hero-stamp">MOTO SHOP · MX</span></div></div><div class="benefits"><div class="benefit"><span class="benefit-icon">🚚</span><div><strong>Envío $30 MXN</strong><small>Simulado en el checkout</small></div></div><div class="benefit"><span class="benefit-icon">📦</span><div><strong>Recoge en tienda</strong><small>Sin costo de envío</small></div></div><div class="benefit"><span class="benefit-icon">🔒</span><div><strong>Compras de prueba</strong><small>Nunca realizamos cargos</small></div></div></div>${banner()}${catalogSection(true)}<section class="section"><div class="section-head"><div><span class="eyebrow">EXPLORA POR TIPO</span><h2>Listo para rodar</h2></div></div><div class="category-grid">${[['Cascos','⛑️'],['Accesorios','🧤'],['Refacciones','⚙️']].map(([c,em])=>`<a class="category-card" href="#catalogo" data-action="goto-category" data-value="${c}"><span class="category-emoji">${em}</span><span><h3>${c}</h3><small>Explorar colección →</small></span></a>`).join('')}</div></section></div>`;}
-function catalogPage(){return `<div class="container"><div class="page-hero"><span class="eyebrow">MOTO SHOP / COLECCIONES</span><h1>La tienda</h1><p>Cascos, accesorios y refacciones en un mismo lugar.</p></div>${catalogSection()}</div>`;}
+function catalogo3dSection(){
+ return '<section id="ms3d" aria-label="Experiencia tridimensional de productos">'+
+ '<div class="ms3d-header"><div><span class="ms3d-kicker">MOTO SHOP · EXPERIENCIA 3D</span><h2>La tabla <span>de tu próxima aventura</span></h2>'+
+ '<p>Explora más de 100 productos con una tabla periódica interactiva. Selecciona una ficha, revisa el precio y agrégala al mismo carrito de la tienda.</p></div><span class="ms3d-demo">SOLO DEMOSTRACIÓN</span></div>'+
+ '<div class="ms3d-toolbar"><button type="button" class="ms3d-layout" data-ms3d-layout="table" aria-pressed="false">▦ Tabla</button>'+
+ '<button type="button" class="ms3d-layout" data-ms3d-layout="sphere" aria-pressed="true">◉ Esfera</button>'+
+ '<button type="button" class="ms3d-layout" data-ms3d-layout="helix" aria-pressed="false">〰 Hélice</button>'+
+ '<button type="button" class="ms3d-layout" data-ms3d-layout="grid" aria-pressed="false">▤ Cuadrícula</button>'+
+ '<button type="button" class="ms3d-open-cart" data-action="route" data-to="carrito">🛒 Ver carrito</button></div>'+
+ '<div id="ms3d-stage" class="ms3d-stage"><div class="ms3d-fallback">Preparando catálogo 3D… Si no carga, puedes usar el catálogo de tarjetas que aparece debajo.</div></div>'+
+ '<p id="ms3d-status" class="ms3d-status" role="status">Selecciona una guitarra… ¡ahora cascos, accesorios y refacciones! Arrastra para girar.</p></section>';
+}
+function catalogPage(){return `<div class="container"><div class="page-hero"><span class="eyebrow">MOTO SHOP / COLECCIONES</span><h1>La tienda</h1><p>Cascos, accesorios y refacciones en un mismo lugar.</p></div>${catalogo3dSection()}${catalogSection()}</div>`;}
 function productPage(id){let p=pById(id),urlParams=new URLSearchParams(location.search),shared=false;if(!p&&urlParams.get('sku')===String(id)){const name=urlParams.get('nombre');if(name){p={id,nombre:name,precio:Math.max(0,Number(urlParams.get('precio'))||0),stock:Math.max(0,Number(urlParams.get('stock'))||0),categoria:urlParams.get('categoria')||'Accesorios',emoji:urlParams.get('icono')||'🏍️',color:'#f2d6e0',descripcion:'Ficha de producto de demostración compartida mediante código QR.',imagenes:[],activo:true,codigo:'QR-'+id};shared=true;}}
 if(!p)return `<div class="container"><div class="empty"><div class="emoji">🛵</div><h2>Producto no encontrado</h2><a href="#catalogo" class="btn">Ver catálogo</a></div></div>`;
 const photos=p.imagenes||[],src=photos[selectedImage]||null;return `<div class="container"><div class="breadcrumbs"><a href="#inicio">Inicio</a> / <a href="#catalogo">Tienda</a> / ${esc(p.nombre)}</div><section class="detail-layout"><div><div class="detail-visual" style="background:${/^#[0-9a-fA-F]{6}$/.test(p.color)?p.color:'#f6d9e2'}">${src?`<img src="${attr(src)}" alt="${attr(p.nombre)}">`:`<span class="product-emoji">${esc(p.emoji||'🏍️')}</span>`}</div>${photos.length>1?`<div class="thumbs">${photos.map((photo,i)=>`<img class="thumb ${i===selectedImage?'selected':''}" data-action="detail-photo" data-index="${i}" src="${attr(photo)}" alt="Foto ${i+1}">`).join('')}</div>`:''}</div><div class="detail-copy"><span class="eyebrow">${esc(p.categoria)} · ${esc(p.codigo||'')}</span><h1>${esc(p.nombre)}</h1><span class="pill ${p.stock?'positive':'neutral'}">${p.stock?'✓ En existencia':'Agotado'} · ${p.stock} unidades</span><p>${esc(p.descripcion)}</p><div class="price">${money(p.precio)}</div><p class="price-note">Precio base de demostración; en el resumen de compra se agrega IVA 16 %.</p><div class="field" style="max-width:140px"><label for="detailQty">Cantidad</label><input type="number" id="detailQty" min="1" max="${p.stock}" value="1"></div><button class="btn btn-pink" data-action="add-detail" data-id="${p.id}" ${p.stock?'':'disabled'}>🛒 Agregar al carrito</button><div class="share-row"><button class="btn btn-outline" data-action="qr" data-id="${p.id}" ${shared?'data-shared="1"':''}>▦ Ver código QR</button><button class="btn btn-outline" data-action="share" data-id="${p.id}">↗ Compartir producto</button></div>${banner()}${shared?'<p class="muted">Esta ficha procede de un código QR. El inventario en otros dispositivos no se sincroniza. Para comprarlo en tu demo debes tener el artículo también en tu navegador.</p>':''}</div></section></div>`;}
@@ -203,7 +256,25 @@ if(a==='registro-delete'){let r=state.registros.find(r=>r.id===id&&r.usuarioId==
 if(a==='exportar'){download('MotoShop_respaldo_demo_'+today()+'.json',JSON.stringify({tipo:'respaldo_de_demostracion_no_sincronizado',exportado:ts(),productos:state.productos,pedidos:state.pedidos,registros:state.registros},null,2),'application/json;charset=utf-8');toast('Copia de datos demo descargada.');return;}
 if(a==='reset'){confirmReset();return;}
 }
-function render(){let hash=decodeURIComponent(location.hash.slice(1));if(!hash){const params=new URLSearchParams(location.search);hash=params.has('sku')?'producto/'+params.get('sku'):'inicio';}syncHeader();document.getElementById('mobileMenu').classList.add('hidden');let content;if(hash==='inicio')content=homePage();else if(hash==='catalogo')content=catalogPage();else if(hash==='carrito')content=cartPage();else if(hash==='checkout')content=checkoutPage();else if(hash==='login'||hash==='registro')content=authPage(hash);else if(hash==='pedidos')content=userOrdersPage();else if(hash==='admin')content=adminPage();else if(hash==='perfil')content=profilePage();else if(hash.startsWith('producto/'))content=productPage(hash.split('/')[1]);else if(hash.startsWith('ticket/'))content=receiptPage(hash.split('/')[1]);else content=`<div class="container empty"><h2>Esta página no existe</h2><a href="#inicio" class="btn">Volver al inicio</a></div>`;app.innerHTML=content;syncHeader();}
+function render(){let hash=decodeURIComponent(location.hash.slice(1));if(!hash){const params=new URLSearchParams(location.search);hash=params.has('sku')?'producto/'+params.get('sku'):'inicio';}syncHeader();document.getElementById('mobileMenu').classList.add('hidden');let content;if(hash==='inicio')content=homePage();else if(hash==='catalogo')content=catalogPage();else if(hash==='carrito')content=cartPage();else if(hash==='checkout')content=checkoutPage();else if(hash==='login'||hash==='registro')content=authPage(hash);else if(hash==='pedidos')content=userOrdersPage();else if(hash==='admin')content=adminPage();else if(hash==='perfil')content=profilePage();else if(hash.startsWith('producto/'))content=productPage(hash.split('/')[1]);else if(hash.startsWith('ticket/'))content=receiptPage(hash.split('/')[1]);else content=`<div class="container empty"><h2>Esta página no existe</h2><a href="#inicio" class="btn">Volver al inicio</a></div>`;app.innerHTML=content;syncHeader();
+ window.dispatchEvent(new CustomEvent('motoshop:rendered',{detail:{
+  products:state.productos.filter(p=>p.activo).map(p=>({
+   id:p.id,nombre:p.nombre,categoria:p.categoria,precio:p.precio,
+   descripcion:p.descripcion,emoji:p.emoji,imagen:p.imagenes?.[0]||'',
+   stock:p.stock,codigo:p.codigo
+  }))
+ }}));
+}
+window.addEventListener('motoshop:3d-ready',()=>{
+ if(location.hash==='#catalogo')render();
+});
+window.addEventListener('motoshop:3d-buy',event=>{
+ const id=Number(event.detail?.id);
+ const antes=state.carrito.reduce((s,c)=>s+(Number(c.cantidad)||0),0);
+ addCart(id,1);
+ const despues=state.carrito.reduce((s,c)=>s+(Number(c.cantidad)||0),0);
+ if(despues>antes)route('carrito');
+});
 document.addEventListener('click',event=>{const btn=event.target.closest('[data-action]');if(btn){if(btn.tagName==='A')event.preventDefault();event.stopPropagation();handleAction(btn);}});
 document.addEventListener('submit',event=>{const form=event.target.closest('[data-form]');if(form){event.preventDefault();const button=form.querySelector('[type=submit]');if(button)button.disabled=true;Promise.resolve(handleForm(form)).catch(e=>{console.error(e);toast('Ocurrió un error al procesar la acción de prueba.','err');}).finally(()=>{if(button?.isConnected)button.disabled=false;});}});
 document.addEventListener('change',event=>{const target=event.target;if(target.matches('[data-qty-id]')){updateQty(target.dataset.qtyId,target.value);}if(target.id==='deliveryChoice'){const isHome=target.value==='domicilio';document.getElementById('deliveryAddress')?.classList.toggle('hidden',!isHome);const totals=cartTotals();document.getElementById('summaryShipping').textContent=money(isHome?30:0);document.getElementById('summaryCheckoutTotal').textContent=money(totals.subtotal+totals.iva+(isHome?30:0));}if(target.id==='sortProducts'){currentSort=target.value;render();}});
