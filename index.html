@@ -7,6 +7,8 @@
 <meta name="description" content="Moto Shop, tienda de demostración de cascos, accesorios y refacciones con carrito, pedidos y panel administrativo simulado.">
 <title>MOTO SHOP | Tu moto. Tu estilo. Tu camino.</title>
 <link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/catalogo3d.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"}}</script>
 </head>
 <body>
 <div class="top-strip"><span>🏍 MOTO SHOP</span><span class="demo-label">SITIO DEMOSTRATIVO · SIN PAGOS REALES</span><span>HECHO PARA RODAR</span></div>
@@ -33,5 +35,6 @@
 <footer class="footer"><div class="footer-inner"><div><strong class="footer-logo">MOTO<span>SHOP</span></strong><p>Cascos, accesorios y refacciones. Proyecto académico interactivo.</p></div><div><strong>Explora</strong><a href="#catalogo">Catálogo</a><a href="#carrito">Mi carrito</a><a href="#pedidos">Mis pedidos</a></div><div><strong>Demostración</strong><p>Los pagos, envíos y correos son simulados.<br>Los datos se guardan únicamente en tu navegador.</p><button data-action="exportar" class="footer-button">Exportar mis datos demo</button></div></div><div class="footer-bottom">© <span id="year"></span> MOTO SHOP · Experiencia académica · Ninguna compra genera cargos.</div></footer>
 <div id="modalHost" class="modal-host hidden" role="dialog" aria-modal="true" aria-label="Ventana de Moto Shop"></div>
 <script defer src="assets/js/app.js"></script>
+<script type="module" src="assets/js/catalogo3d.js"></script>
 </body>
 </html>
